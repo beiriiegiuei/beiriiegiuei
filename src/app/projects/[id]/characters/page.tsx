@@ -9,12 +9,17 @@ export default async function CharactersPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [characters, relationships] = await Promise.all([
+  const [characters, relationships, factions] = await Promise.all([
     db.character.findMany({
       where: { projectId: id },
       orderBy: { order: "asc" },
     }),
     db.relationship.findMany({ where: { projectId: id } }),
+    db.faction.findMany({
+      where: { projectId: id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, emoji: true },
+    }),
   ]);
 
   return (
@@ -22,6 +27,7 @@ export default async function CharactersPage({
       projectId={id}
       characters={characters}
       relationships={relationships}
+      factions={factions}
     />
   );
 }

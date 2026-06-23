@@ -16,8 +16,8 @@ export default async function ForeshadowingPage({
     }),
     db.scene.findMany({
       where: { projectId: id },
-      orderBy: { order: "asc" },
-      select: { id: true, title: true },
+      orderBy: [{ episodeNo: "asc" }, { order: "asc" }],
+      select: { id: true, title: true, episodeNo: true },
     }),
   ]);
 

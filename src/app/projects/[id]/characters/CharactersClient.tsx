@@ -21,15 +21,28 @@ const EMOJIS = [
   "👺", "🐺", "🐉", "🤖", "👻", "😈", "👑", "⚔️", "🗡️", "🌙",
 ];
 
+type FactionLite = { id: string; name: string; emoji: string | null };
+
+const LIFE_META: Record<string, { label: string; cls: string }> = {
+  alive: { label: "생존", cls: "bg-emerald-50 text-emerald-700" },
+  dead: { label: "사망", cls: "bg-slate-200 text-slate-600" },
+  revived: { label: "환생/부활", cls: "bg-violet-50 text-violet-700" },
+  unknown: { label: "불명", cls: "bg-amber-50 text-amber-700" },
+};
+
 export function CharactersClient({
   projectId,
   characters,
   relationships,
+  factions,
 }: {
   projectId: string;
   characters: Character[];
   relationships: Relationship[];
+  factions: FactionLite[];
 }) {
+  const factionName = (id: string | null) =>
+    id ? factions.find((f) => f.id === id) : null;
   const [view, setView] = useState<"cards" | "graph">("cards");
   const [editing, setEditing] = useState<Character | null | "new">(null);
   const [relEditing, setRelEditing] = useState<Relationship | null | "new">(null);
@@ -79,25 +92,47 @@ export function CharactersClient({
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+                    className="relative flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
                     style={{ background: (c.color || "#7c54f5") + "1f" }}
                   >
                     {c.emoji || "🧑"}
+                    {c.rank != null && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-bold text-white">
+                        {c.rank}
+                      </span>
+                    )}
                   </span>
                   <div className="min-w-0">
                     <h3 className="truncate font-semibold text-ink">{c.name}</h3>
-                    {c.role && (
-                      <span className="text-xs text-ink-muted">{c.role}</span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-muted">
+                      {c.role && <span>{c.role}</span>}
+                      {factionName(c.factionId) && (
+                        <span className="text-ink-faint">
+                          · {factionName(c.factionId)!.emoji} {factionName(c.factionId)!.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                {c.aliases && (
+                  <p className="mt-2 text-xs text-ink-faint">a.k.a. {c.aliases}</p>
+                )}
                 {c.summary && (
-                  <p className="mt-3 line-clamp-2 text-sm text-ink-soft">{c.summary}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-ink-soft">{c.summary}</p>
                 )}
                 <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-ink-faint">
-                  {c.age && <span className="chip bg-paper-sunk">🎂 {c.age}</span>}
-                  {c.gender && <span className="chip bg-paper-sunk">{c.gender}</span>}
-                  {c.goal && <span className="chip bg-paper-sunk">🎯 {c.goal}</span>}
+                  {c.lifeStatus && c.lifeStatus !== "alive" && (
+                    <span className={`chip ${LIFE_META[c.lifeStatus]?.cls || "bg-paper-sunk"}`}>
+                      {LIFE_META[c.lifeStatus]?.label || c.lifeStatus}
+                    </span>
+                  )}
+                  {c.element && <span className="chip bg-brand-50 text-brand-700">{c.element}</span>}
+                  {c.tier && <span className="chip bg-paper-sunk">{c.tier}</span>}
+                  {c.mbti && <span className="chip bg-paper-sunk">{c.mbti}</span>}
+                  {c.tags &&
+                    c.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3).map((t) => (
+                      <span key={t} className="chip bg-paper-sunk">#{t}</span>
+                    ))}
                 </div>
               </button>
             ))}
@@ -168,6 +203,7 @@ export function CharactersClient({
         <CharacterModal
           projectId={projectId}
           character={editing === "new" ? null : editing}
+          factions={factions}
           onClose={() => setEditing(null)}
         />
       )}
@@ -239,10 +275,12 @@ function Field({
 function CharacterModal({
   projectId,
   character,
+  factions,
   onClose,
 }: {
   projectId: string;
   character: Character | null;
+  factions: FactionLite[];
   onClose: () => void;
 }) {
   const [emoji, setEmoji] = useState(character?.emoji || "🧑");
@@ -307,7 +345,21 @@ function CharacterModal({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="이름 *" name="name" defaultValue={character?.name} placeholder="이름" />
+          <Field label="이명 / 가명" name="aliases" defaultValue={character?.aliases} placeholder="예: 케이가스, 란" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="역할" name="role" defaultValue={character?.role} placeholder="주인공 / 조력자 / 악역" />
+          <div>
+            <label className="label">소속 세력</label>
+            <select name="factionId" defaultValue={character?.factionId || ""} className="input">
+              <option value="">소속 없음</option>
+              {factions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.emoji} {f.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <Field
           label="한 줄 요약"
@@ -316,10 +368,28 @@ function CharacterModal({
           placeholder="이 인물을 한 줄로 설명하면?"
         />
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="나이" name="age" defaultValue={character?.age} />
-          <Field label="성별" name="gender" defaultValue={character?.gender} />
+          <Field label="속성 / 능력 계열" name="element" defaultValue={character?.element} placeholder="예: 검류 / 전기" />
+          <Field label="랭킹 (숫자)" name="rank" defaultValue={character?.rank != null ? String(character.rank) : ""} placeholder="예: 7" />
+          <Field label="등급" name="tier" defaultValue={character?.tier} placeholder="예: 중급 월성" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="label">생존 상태</label>
+            <select name="lifeStatus" defaultValue={character?.lifeStatus || "alive"} className="input">
+              <option value="alive">생존</option>
+              <option value="dead">사망</option>
+              <option value="revived">환생/부활</option>
+              <option value="unknown">불명</option>
+            </select>
+          </div>
+          <Field label="MBTI" name="mbti" defaultValue={character?.mbti} placeholder="예: ENFJ" />
           <Field label="목표/동기" name="goal" defaultValue={character?.goal} placeholder="🎯" />
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="나이" name="age" defaultValue={character?.age} />
+          <Field label="성별" name="gender" defaultValue={character?.gender} />
+        </div>
+        <Field label="태그 (쉼표로 구분)" name="tags" defaultValue={character?.tags} placeholder="예: 천재, 복수자, 떡밥보유" />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="외모" name="appearance" defaultValue={character?.appearance} textarea />
           <Field label="성격" name="personality" defaultValue={character?.personality} textarea />

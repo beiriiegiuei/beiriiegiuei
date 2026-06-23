@@ -9,59 +9,115 @@ datasource db {
 
 // 작품 (하나의 세계관 단위)
 model Project {
-  id        String   @id @default(cuid())
-  title     String
-  logline   String? // 한 줄 소개
-  genre     String?
-  coverEmoji String? @default("📖")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  title      String
+  logline    String? // 한 줄 소개
+  genre      String?
+  coverEmoji String?  @default("📖")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  characters    Character[]
-  relationships Relationship[]
-  foreshadows   Foreshadow[]
-  acts          Act[]
-  scenes        Scene[]
-  wikiPages     WikiPage[]
+  characters       Character[]
+  relationships    Relationship[]
+  foreshadows      Foreshadow[]
+  seasons          Season[]
+  acts             Act[]
+  scenes           Scene[]
+  wikiPages        WikiPage[]
+  factions         Faction[]
+  factionRelations FactionRelation[]
 }
 
 // 등장인물
 model Character {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   projectId   String
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name        String
+  aliases     String? // 이명 / 가명 (예: 케이가스, 마시야마 타이요우)
   role        String? // 주인공 / 조연 / 악역 / 단역 ...
-  emoji       String? @default("🧑")
-  color       String? @default("#7c54f5")
+  emoji       String?  @default("🧑")
+  color       String?  @default("#7c54f5")
   summary     String? // 한 줄 요약
   age         String?
   gender      String?
+  mbti        String?
+  element     String? // 속성 / 능력 계열 (예: 검류, 전기, 추위)
+  rank        Int? // 랭킹 (숫자, 작을수록 강함)
+  tier        String? // 등급 (예: 초급/중급/상급 월성)
+  lifeStatus  String?  @default("alive") // alive | dead | revived | unknown
+  tags        String? // 쉼표 구분 태그
+  factionId   String? // 소속 세력
+  faction     Faction? @relation("factionMembers", fields: [factionId], references: [id], onDelete: SetNull)
   appearance  String?
   personality String?
   background  String? // 서사 / 과거
   goal        String? // 목표 / 동기
   notes       String?
-  order       Int     @default(0)
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
 
   relationsFrom Relationship[] @relation("from")
   relationsTo   Relationship[] @relation("to")
+  ledFactions   Faction[]      @relation("factionLeader")
 
   @@index([projectId])
+  @@index([factionId])
 }
 
 // 인물 간 관계 (방향성 있음)
 model Relationship {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   projectId   String
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   fromId      String
   toId        String
   from        Character @relation("from", fields: [fromId], references: [id], onDelete: Cascade)
   to          Character @relation("to", fields: [toId], references: [id], onDelete: Cascade)
   label       String? // "연인", "라이벌", "스승" ...
-  kind        String? @default("neutral") // ally | rival | family | romance | neutral
+  kind        String?   @default("neutral") // ally | rival | family | romance | neutral
+  description String?
+
+  @@index([projectId])
+}
+
+// 세력 / 조직 (예: 15정각, 네버피스)
+model Faction {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  element     String? // 세력 속성 (예: 검류, 전기)
+  emoji       String?  @default("⚔️")
+  color       String?  @default("#7c54f5")
+  summary     String?
+  description String?
+  leaderId    String? // 수장 / 각주
+  leader      Character? @relation("factionLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  parentId    String? // 상위 세력 (산하 구조)
+  parent      Faction?  @relation("factionTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Faction[] @relation("factionTree")
+  members     Character[] @relation("factionMembers")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  relFrom FactionRelation[] @relation("frelFrom")
+  relTo   FactionRelation[] @relation("frelTo")
+
+  @@index([projectId])
+}
+
+// 세력 간 관계
+model FactionRelation {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromId      String
+  toId        String
+  from        Faction @relation("frelFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          Faction @relation("frelTo", fields: [toId], references: [id], onDelete: Cascade)
+  label       String?
+  kind        String? @default("neutral") // ally | rival | subordinate | neutral
   description String?
 
   @@index([projectId])
@@ -69,33 +125,51 @@ model Relationship {
 
 // 떡밥 (복선)
 model Foreshadow {
-  id              String  @id @default(cuid())
+  id              String   @id @default(cuid())
   projectId       String
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title           String
   description     String?
-  importance      Int     @default(2) // 1=낮음 2=보통 3=핵심
-  status          String  @default("planted") // planted | resolved | abandoned
-  plantedSceneId  String? // 심은 장면
-  resolvedSceneId String? // 회수 장면
+  importance      Int      @default(2) // 1=낮음 2=보통 3=핵심
+  status          String   @default("planted") // planted | resolved | abandoned
+  plantedSceneId  String? // 심은 회차
+  resolvedSceneId String? // 회수 회차
   createdAt       DateTime @default(now())
 
   @@index([projectId])
 }
 
-// 콘티 보드의 막(컬럼)
-model Act {
+// 시즌 (스토리 최상위 묶음)
+model Season {
   id        String  @id @default(cuid())
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title     String
   order     Int     @default(0)
-  scenes    Scene[]
+  acts      Act[]
 
   @@index([projectId])
 }
 
-// 장면 / 에피소드 (콘티 카드)
+// 아크 / 시나리오 (시즌 하위, 회차 묶음)
+model Act {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  seasonId  String?
+  season    Season? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  title     String
+  summary   String?
+  epStart   Int? // 시작 회차
+  epEnd     Int? // 끝 회차
+  order     Int     @default(0)
+  scenes    Scene[]
+
+  @@index([projectId])
+  @@index([seasonId])
+}
+
+// 회차 / 장면 (콘티 카드)
 model Scene {
   id        String  @id @default(cuid())
   projectId String
@@ -104,6 +178,7 @@ model Scene {
   act       Act?    @relation(fields: [actId], references: [id], onDelete: SetNull)
   title     String
   summary   String?
+  episodeNo Int? // 회차 번호
   status    String? @default("idea") // idea | draft | done
   order     Int     @default(0)
 
@@ -113,13 +188,13 @@ model Scene {
 
 // 세계관 위키 문서
 model WikiPage {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title     String
-  category  String? @default("일반")
+  category  String?  @default("일반")
   content   String? // 마크다운 + [[백링크]]
-  order     Int     @default(0)
+  order     Int      @default(0)
   updatedAt DateTime @updatedAt
 
   @@index([projectId])

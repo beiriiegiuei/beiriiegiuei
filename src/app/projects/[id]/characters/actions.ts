@@ -5,12 +5,18 @@ import { revalidatePath } from "next/cache";
 
 const FIELDS = [
   "name",
+  "aliases",
   "role",
   "emoji",
   "color",
   "summary",
   "age",
   "gender",
+  "mbti",
+  "element",
+  "tier",
+  "lifeStatus",
+  "tags",
   "appearance",
   "personality",
   "background",
@@ -19,11 +25,16 @@ const FIELDS = [
 ] as const;
 
 function readCharacter(formData: FormData) {
-  const data: Record<string, string | null> = {};
+  const data: Record<string, string | number | null> = {};
   for (const f of FIELDS) {
     const v = String(formData.get(f) ?? "").trim();
     data[f] = v || null;
   }
+  // 랭킹 (숫자)
+  const rankRaw = String(formData.get("rank") ?? "").trim();
+  data.rank = rankRaw ? Number(rankRaw) : null;
+  // 소속 세력
+  data.factionId = String(formData.get("factionId") || "") || null;
   return data;
 }
 
@@ -37,7 +48,7 @@ export async function saveCharacter(projectId: string, formData: FormData) {
   } else {
     const count = await db.character.count({ where: { projectId } });
     await db.character.create({
-      data: { ...data, name: data.name!, projectId, order: count },
+      data: { ...data, name: data.name as string, projectId, order: count },
     });
   }
   revalidatePath(`/projects/${projectId}/characters`);

@@ -19,6 +19,7 @@ export default async function DashboardPage({
           scenes: true,
           wikiPages: true,
           relationships: true,
+          factions: true,
         },
       },
       foreshadows: true,
@@ -35,9 +36,9 @@ export default async function DashboardPage({
 
   const stats = [
     { label: "등장인물", value: project._count.characters, emoji: "👤", href: "characters" },
-    { label: "관계", value: project._count.relationships, emoji: "🔗", href: "characters" },
+    { label: "세력", value: project._count.factions, emoji: "🛡️", href: "factions" },
     { label: "떡밥", value: project._count.foreshadows, emoji: "🎣", href: "foreshadowing" },
-    { label: "장면", value: project._count.scenes, emoji: "🎬", href: "board" },
+    { label: "회차", value: project._count.scenes, emoji: "🎬", href: "board" },
     { label: "위키", value: project._count.wikiPages, emoji: "📚", href: "wiki" },
   ];
 

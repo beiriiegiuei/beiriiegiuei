@@ -10,7 +10,10 @@ import {
   setForeshadowStatus,
 } from "./actions";
 
-type Scene = { id: string; title: string };
+type Scene = { id: string; title: string; episodeNo: number | null };
+
+const sceneLabel = (s: Scene) =>
+  (s.episodeNo != null ? `${s.episodeNo}화 · ` : "") + s.title;
 
 const STATUS_META: Record<string, { label: string; cls: string; dot: string }> = {
   planted: { label: "심음 (미회수)", cls: "bg-amber-50 text-amber-700", dot: "#f59e0b" },
@@ -31,8 +34,11 @@ export function ForeshadowClient({
   const [editing, setEditing] = useState<Foreshadow | null | "new">(null);
   const [filter, setFilter] = useState<"all" | "planted" | "resolved">("all");
 
-  const sceneName = (id: string | null) =>
-    id ? scenes.find((s) => s.id === id)?.title || "삭제된 장면" : null;
+  const sceneName = (id: string | null) => {
+    if (!id) return null;
+    const s = scenes.find((x) => x.id === id);
+    return s ? sceneLabel(s) : "삭제된 회차";
+  };
 
   const resolved = foreshadows.filter((f) => f.status === "resolved").length;
   const planted = foreshadows.filter((f) => f.status === "planted").length;
@@ -251,23 +257,23 @@ function ForeshadowModal({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">심은 장면</label>
+            <label className="label">심은 회차</label>
             <select name="plantedSceneId" defaultValue={item?.plantedSceneId || ""} className="input">
               <option value="">미지정</option>
               {scenes.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title}
+                  {sceneLabel(s)}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label">회수 장면</label>
+            <label className="label">회수 회차</label>
             <select name="resolvedSceneId" defaultValue={item?.resolvedSceneId || ""} className="input">
               <option value="">미지정</option>
               {scenes.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title}
+                  {sceneLabel(s)}
                 </option>
               ))}
             </select>
@@ -275,7 +281,7 @@ function ForeshadowModal({
         </div>
         {scenes.length === 0 && (
           <p className="text-xs text-ink-faint">
-            💡 콘티 보드에서 장면을 만들면 떡밥을 장면에 연결할 수 있어요.
+            💡 스토리 구조에서 회차를 만들면 떡밥을 회차에 연결할 수 있어요.
           </p>
         )}
         <div className="flex items-center justify-between gap-2 pt-1">

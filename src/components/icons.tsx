@@ -86,3 +86,13 @@ export const IconSpark = (p: P) => (
     <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
   </svg>
 );
+export const IconShield = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+  </svg>
+);
+export const IconCrown = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 7l4 4 5-7 5 7 4-4-2 12H5z" />
+  </svg>
+);
