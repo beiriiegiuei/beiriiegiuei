@@ -7,7 +7,7 @@
 ```bash
 npm run dev        # 개발 서버 (localhost:3000)
 npm run build      # prisma generate + next build
-npm run db:push    # 스키마를 SQLite에 반영 (마이그레이션 히스토리 없음)
+npm run db:push    # 스키마를 DB(PostgreSQL)에 반영 (마이그레이션 히스토리 없음)
 npm run db:seed    # 데모 데이터 시드
 ```
 
@@ -17,7 +17,8 @@ npm run db:seed    # 데모 데이터 시드
 - 데이터 변경은 모두 **Server Actions**로 처리한다 (별도 REST API 라우트 없음).
   각 기능 폴더의 `actions.ts`에 `"use server"`로 정의하고, 변경 후 `revalidatePath`로 갱신.
 - 페이지(`page.tsx`)는 서버 컴포넌트로 Prisma에서 데이터를 읽어 클라이언트 컴포넌트(`*Client.tsx`)에 props로 전달한다.
-- DB는 **Prisma + SQLite**(`prisma/dev.db`, gitignore됨). 클라이언트 싱글톤은 `src/lib/db.ts`.
+- DB는 **Prisma + PostgreSQL**(Neon 등 클라우드, `DATABASE_URL`). 클라이언트 싱글톤은 `src/lib/db.ts`.
+- 배포: **Vercel + Neon**. 자세한 내용은 `DEPLOY.md`.
 - 모든 데이터 페이지는 `export const dynamic = "force-dynamic"`로 항상 최신 상태를 읽는다.
 
 ## 디자인 규칙
@@ -30,8 +31,9 @@ npm run db:seed    # 데모 데이터 시드
 ## 기능별 위치
 
 - 인물/관계도: `src/app/projects/[id]/characters/`
+- 세력/조직: `src/app/projects/[id]/factions/`
 - 떡밥: `src/app/projects/[id]/foreshadowing/`
-- 콘티 보드: `src/app/projects/[id]/board/`
+- 스토리 구조(시즌→아크→회차): `src/app/projects/[id]/board/`
 - 위키: `src/app/projects/[id]/wiki/`
 
 ## 주의

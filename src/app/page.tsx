@@ -53,7 +53,7 @@ export default async function HomePage() {
       )}
 
       <footer className="mt-16 text-center text-xs text-ink-faint">
-        로컬 서버 DB(SQLite)에 안전하게 저장됩니다.
+        클라우드 DB에 안전하게 저장됩니다.
       </footer>
     </main>
   );

@@ -18,24 +18,25 @@
 ## 🛠 기술 스택
 
 - **Next.js 15** (App Router, Server Actions) + **React 19** + **TypeScript**
-- **Prisma + SQLite** — 외부 DB 없이 파일 하나로 동작하는 서버 DB
+- **Prisma + PostgreSQL** — 클라우드 DB(Neon 등). 어디서든 같은 데이터에 접근
 - **Tailwind CSS** — 자체 디자인 토큰 기반 미니멀 UI
 
-## 🚀 시작하기
+## 🚀 배포 (권장: Vercel + Neon)
+
+링크만 열면 되는 방식. 자세한 단계는 [`DEPLOY.md`](DEPLOY.md) 참고.
+
+1. [Neon](https://neon.tech)에서 무료 PostgreSQL DB 생성 → 연결 문자열 복사
+2. [Vercel](https://vercel.com)에서 이 GitHub 저장소 import → 환경변수 `DATABASE_URL` 설정 → 배포
+3. 한 번만 테이블 생성: 로컬 `.env`에 같은 `DATABASE_URL`을 넣고 `npm run db:push` (필요 시 `npm run db:seed`)
+
+## 🧑‍💻 로컬 개발
 
 ```bash
-cp .env.example .env # DATABASE_URL 설정 (file:./dev.db)
+cp .env.example .env # DATABASE_URL 에 PostgreSQL 연결 문자열 입력
 npm install          # 의존성 설치 (+ prisma generate 자동 실행)
-npm run db:push      # SQLite 스키마 생성
+npm run db:push      # DB에 스키마 반영
 npm run db:seed      # (선택) 데모 작품 "끝나지 않는 겨울" 데이터 삽입
 npm run dev          # http://localhost:3000
-```
-
-배포용 빌드:
-
-```bash
-npm run build
-npm start
 ```
 
 ## 🗂 데이터 모델
@@ -53,8 +54,9 @@ src/
       layout.tsx                # 사이드바 + 작품 셸
       page.tsx                  # 개요(대시보드)
       characters/               # 인물 카드 + 관계도
+      factions/                 # 세력 · 조직
       foreshadowing/            # 떡밥 추적기
-      board/                    # 콘티 보드 (칸반)
+      board/                    # 스토리 구조 (시즌→아크→회차)
       wiki/                     # 세계관 위키
   components/                   # Modal, 아이콘 등 공용 UI
   lib/db.ts                     # Prisma 클라이언트
