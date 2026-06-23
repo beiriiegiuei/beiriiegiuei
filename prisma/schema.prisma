@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 작품 (하나의 세계관 단위)
+model Project {
+  id        String   @id @default(cuid())
+  title     String
+  logline   String? // 한 줄 소개
+  genre     String?
+  coverEmoji String? @default("📖")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  characters    Character[]
+  relationships Relationship[]
+  foreshadows   Foreshadow[]
+  acts          Act[]
+  scenes        Scene[]
+  wikiPages     WikiPage[]
+}
+
+// 등장인물
+model Character {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  role        String? // 주인공 / 조연 / 악역 / 단역 ...
+  emoji       String? @default("🧑")
+  color       String? @default("#7c54f5")
+  summary     String? // 한 줄 요약
+  age         String?
+  gender      String?
+  appearance  String?
+  personality String?
+  background  String? // 서사 / 과거
+  goal        String? // 목표 / 동기
+  notes       String?
+  order       Int     @default(0)
+  createdAt   DateTime @default(now())
+
+  relationsFrom Relationship[] @relation("from")
+  relationsTo   Relationship[] @relation("to")
+
+  @@index([projectId])
+}
+
+// 인물 간 관계 (방향성 있음)
+model Relationship {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromId      String
+  toId        String
+  from        Character @relation("from", fields: [fromId], references: [id], onDelete: Cascade)
+  to          Character @relation("to", fields: [toId], references: [id], onDelete: Cascade)
+  label       String? // "연인", "라이벌", "스승" ...
+  kind        String? @default("neutral") // ally | rival | family | romance | neutral
+  description String?
+
+  @@index([projectId])
+}
+
+// 떡밥 (복선)
+model Foreshadow {
+  id              String  @id @default(cuid())
+  projectId       String
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  importance      Int     @default(2) // 1=낮음 2=보통 3=핵심
+  status          String  @default("planted") // planted | resolved | abandoned
+  plantedSceneId  String? // 심은 장면
+  resolvedSceneId String? // 회수 장면
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// 콘티 보드의 막(컬럼)
+model Act {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  order     Int     @default(0)
+  scenes    Scene[]
+
+  @@index([projectId])
+}
+
+// 장면 / 에피소드 (콘티 카드)
+model Scene {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actId     String?
+  act       Act?    @relation(fields: [actId], references: [id], onDelete: SetNull)
+  title     String
+  summary   String?
+  status    String? @default("idea") // idea | draft | done
+  order     Int     @default(0)
+
+  @@index([projectId])
+  @@index([actId])
+}
+
+// 세계관 위키 문서
+model WikiPage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  category  String? @default("일반")
+  content   String? // 마크다운 + [[백링크]]
+  order     Int     @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
