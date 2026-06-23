@@ -17,19 +17,10 @@
 
 > 이 문자열이 곧 `DATABASE_URL` 입니다. 비밀번호가 포함돼 있으니 외부에 노출하지 마세요.
 
-## 2단계 — DB에 테이블 만들기 (한 번만)
+## 2단계 — DB에 테이블 만들기
 
-방법 A) 로컬에서:
-```bash
-# .env 파일에 1단계에서 복사한 문자열을 넣고
-DATABASE_URL="postgresql://...neon.tech/neondb?sslmode=require"
-
-npm install
-npm run db:push     # 테이블 생성
-npm run db:seed     # (선택) 데모 데이터
-```
-
-방법 B) 직접 하기 번거로우면, 그 연결 문자열을 저(Claude)에게 주시면 대신 실행해 드릴게요.
+따로 할 일 없습니다. **Vercel이 배포할 때 자동으로 테이블을 생성**합니다
+(`vercel-build` 스크립트가 `prisma db push`를 실행).
 
 ## 3단계 — Vercel에 배포
 
