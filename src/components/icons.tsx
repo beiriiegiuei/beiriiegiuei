@@ -96,3 +96,23 @@ export const IconCrown = (p: P) => (
     <path d="M3 7l4 4 5-7 5 7 4-4-2 12H5z" />
   </svg>
 );
+export const IconHeart = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+  </svg>
+);
+export const IconChat = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
+export const IconSend = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
+  </svg>
+);
+export const IconChevronRight = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9 18l6-6-6-6" />
+  </svg>
+);

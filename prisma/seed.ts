@@ -1,6 +1,14 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "crypto";
 
 const db = new PrismaClient();
+
+// src/lib/auth.ts 와 동일한 방식(scrypt)으로 비밀번호 해시
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const derived = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${derived}`;
+}
 
 async function main() {
   const project = await db.project.create({
@@ -137,6 +145,61 @@ async function main() {
   });
 
   console.log(`✅ 데모 작품 "${project.title}" 생성 완료 (id: ${pid})`);
+
+  // ── 톡스토리 데모 (대화형 스토리) ──────────────────────
+  const demoUser = await db.user.upsert({
+    where: { username: "demo" },
+    update: {},
+    create: {
+      username: "demo",
+      displayName: "겨울작가",
+      passwordHash: hashPassword("demo1234"),
+    },
+  });
+
+  const story = await db.talkStory.create({
+    data: {
+      authorId: demoUser.id,
+      title: "새벽 두 시의 메시지",
+      description: "잠 못 드는 밤, 모르는 번호로 온 한 통의 메시지에서 시작되는 짧은 대화.",
+      coverEmoji: "🌙",
+      genre: "미스터리 / 로맨스",
+      published: true,
+    },
+  });
+
+  const 나 = await db.talkCharacter.create({
+    data: { storyId: story.id, name: "나", emoji: "🙂", color: "#3daa7c", align: "right", order: 0 },
+  });
+  const 그 = await db.talkCharacter.create({
+    data: { storyId: story.id, name: "모르는 번호", emoji: "👤", color: "#7c54f5", align: "left", order: 1 },
+  });
+
+  const lines: { c?: string; kind: string; text: string }[] = [
+    { kind: "narration", text: "새벽 2시 14분. 휴대폰이 짧게 울렸다." },
+    { c: 그.id, kind: "dialogue", text: "혹시… 아직 안 자요?" },
+    { c: 나.id, kind: "thought", text: "누구지? 저장 안 된 번호인데." },
+    { c: 나.id, kind: "dialogue", text: "누구세요? 번호 잘못 아신 것 같은데요." },
+    { c: 그.id, kind: "dialogue", text: "아니요. 당신이 맞아요. 3층 창문에 불 켜져 있는 사람." },
+    { c: 나.id, kind: "monologue", text: "창밖을 봤다. 맞은편 건물은… 전부 불이 꺼져 있었다." },
+    { kind: "narration", text: "심장이 빠르게 뛰기 시작했다." },
+    { c: 나.id, kind: "dialogue", text: "지금 어디서 절 보고 있는 거예요?" },
+    { c: 그.id, kind: "dialogue", text: "걱정 말아요. 나쁜 사람 아니에요. 그냥… 오늘 밤엔 당신도 잠들면 안 될 것 같아서." },
+    { c: 나.id, kind: "thought", text: "이 사람, 뭔가를 알고 있다." },
+    { kind: "narration", text: "그리고 다음 메시지가 도착했다. — 다음 화에서 계속." },
+  ];
+
+  await db.talkMessage.createMany({
+    data: lines.map((l, i) => ({
+      storyId: story.id,
+      characterId: l.c ?? null,
+      kind: l.kind,
+      text: l.text,
+      order: i,
+    })),
+  });
+
+  console.log(`✅ 톡스토리 데모 "${story.title}" 생성 완료 (데모 계정: demo / demo1234)`);
 }
 
 main()

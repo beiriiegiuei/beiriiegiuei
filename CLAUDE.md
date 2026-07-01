@@ -35,8 +35,14 @@ npm run db:seed    # 데모 데이터 시드
 - 떡밥: `src/app/projects/[id]/foreshadowing/`
 - 스토리 구조(시즌→아크→회차): `src/app/projects/[id]/board/`
 - 위키: `src/app/projects/[id]/wiki/`
+- 톡스토리(대화형 스토리 읽기·쓰기): `src/app/stories/`
+  - 로그인/세션: `src/lib/auth.ts`(scrypt 해시 + HMAC 서명 쿠키, 외부 의존성 없음), 인증 화면 `src/app/login/`
+  - 읽기는 탭·방향키·스페이스·스크롤 모두 지원(`Reader.tsx`). 조회수는 '탭 합계'가 아니라 '연 사람 수 + 완독률'(`StoryRead`)로 집계.
+  - 말풍선 종류: 대사/생각/혼잣말/지문(`TalkMessage.kind`).
+  - 읽기·쓰기 모두 로그인 필수(`requireUser`).
 
 ## 주의
 
 - 스키마 변경 후엔 `npm run db:push` 필요.
 - Next 15에서 `params`는 Promise이므로 `await params` 해야 한다.
+- 톡스토리 세션 서명용 `AUTH_SECRET` 환경변수를 배포 환경(Vercel 등)에 반드시 설정.

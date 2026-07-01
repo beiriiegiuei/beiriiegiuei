@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
-import { IconSpark } from "@/components/icons";
+import { IconSpark, IconChat, IconChevronRight } from "@/components/icons";
 import { NewProjectButton, ProjectCard } from "./HomeClient";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,24 @@ export default async function HomePage() {
         </div>
         <NewProjectButton />
       </header>
+
+      <Link
+        href="/stories"
+        className="card mb-8 flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-pop"
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <IconChat width={22} height={22} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="flex items-center gap-1.5 font-semibold text-ink">
+            톡스토리 <span className="chip bg-brand-50 text-brand-700">New</span>
+          </h2>
+          <p className="text-sm text-ink-muted">
+            대화 형식으로 이야기를 읽고 직접 써보세요. 탭·방향키로 한 줄씩 넘겨 읽어요.
+          </p>
+        </div>
+        <IconChevronRight className="shrink-0 text-ink-faint" />
+      </Link>
 
       {projects.length === 0 ? (
         <div className="card flex flex-col items-center gap-3 px-6 py-20 text-center">
