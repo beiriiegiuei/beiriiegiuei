@@ -164,15 +164,18 @@ async function main() {
       description: "잠 못 드는 밤, 모르는 번호로 온 한 통의 메시지에서 시작되는 짧은 대화.",
       coverEmoji: "🌙",
       genre: "미스터리 / 로맨스",
-      published: true,
     },
   });
 
   const 나 = await db.talkCharacter.create({
-    data: { storyId: story.id, name: "나", emoji: "🙂", color: "#3daa7c", align: "right", order: 0 },
+    data: { storyId: story.id, name: "나", emoji: "🙂", align: "right", order: 0 },
   });
   const 그 = await db.talkCharacter.create({
-    data: { storyId: story.id, name: "모르는 번호", emoji: "👤", color: "#7c54f5", align: "left", order: 1 },
+    data: { storyId: story.id, name: "모르는 번호", emoji: "👤", align: "left", order: 1 },
+  });
+
+  const talkEp1 = await db.talkEpisode.create({
+    data: { storyId: story.id, number: 1, title: "1화 · 낯선 번호", published: true },
   });
 
   const lines: { c?: string; kind: string; text: string }[] = [
@@ -191,7 +194,7 @@ async function main() {
 
   await db.talkMessage.createMany({
     data: lines.map((l, i) => ({
-      storyId: story.id,
+      episodeId: talkEp1.id,
       characterId: l.c ?? null,
       kind: l.kind,
       text: l.text,

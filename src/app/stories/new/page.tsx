@@ -1,9 +1,9 @@
 import { requireUser } from "@/lib/auth";
-import { Editor } from "../Editor";
+import { NewWorkForm } from "../NewWorkForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewStoryPage() {
   await requireUser("/stories/new");
-  return <Editor />;
+  return <NewWorkForm />;
 }

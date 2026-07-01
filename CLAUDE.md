@@ -36,10 +36,14 @@ npm run db:seed    # 데모 데이터 시드
 - 스토리 구조(시즌→아크→회차): `src/app/projects/[id]/board/`
 - 위키: `src/app/projects/[id]/wiki/`
 - 톡스토리(대화형 스토리 읽기·쓰기): `src/app/stories/`
+  - 구조: **작품(`TalkStory`) → 화(`TalkEpisode`) → 대화(`TalkMessage`)**. 조회수·좋아요·댓글·열람기록은 모두 '화' 단위. 인물(`TalkCharacter`)은 작품 단위로 공유.
+  - `/stories`(작품 목록) · `/stories/[id]`(목차 `Toc.tsx`) · `/stories/[id]/episodes/[epId]`(리더 `Reader.tsx`) · `.../edit`(메신저형 편집기 `Editor.tsx`).
   - 로그인/세션: `src/lib/auth.ts`(scrypt 해시 + HMAC 서명 쿠키, 외부 의존성 없음), 인증 화면 `src/app/login/`
-  - 읽기는 탭·방향키·스페이스·스크롤 모두 지원(`Reader.tsx`). 조회수는 '탭 합계'가 아니라 '연 사람 수 + 완독률'(`StoryRead`)로 집계.
-  - 말풍선 종류: 대사/생각/혼잣말/지문(`TalkMessage.kind`).
-  - 읽기·쓰기 모두 로그인 필수(`requireUser`).
+  - 읽기는 탭·방향키·스페이스·스크롤 모두 지원. 조회수는 '탭 합계'가 아니라 '연 사람 수 + 완독률'(`StoryRead`)로 집계.
+  - 말풍선 종류: 대사/생각/혼잣말/지문(`TalkMessage.kind`). 공용 렌더러 `Bubble.tsx`, 프로필 `Avatar.tsx`.
+  - 인물은 색이 아니라 **프로필(이모지 또는 업로드 사진 `TalkCharacter.avatar`, data URL)**로 구분 → 무한 추가. 편집기에서 즉시 추가/수정.
+  - 편집기는 메신저(카톡/DM)형: 하단 입력창에서 말풍선을 쌓고, 미리보기 후 '개시'로 화 공개.
+  - 읽기·쓰기 모두 로그인 필수(`requireUser`). 스키마 구조 변경으로 `vercel-build`에 `--accept-data-loss` 포함.
 
 ## 주의
 

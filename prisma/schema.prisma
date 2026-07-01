@@ -218,7 +218,7 @@ model User {
   reads    StoryRead[]
 }
 
-// 한 편의 대화형 스토리
+// 한 편의 작품 (여러 '화'를 묶는 단위)
 model TalkStory {
   id          String   @id @default(cuid())
   authorId    String
@@ -227,28 +227,43 @@ model TalkStory {
   description String? // 소개글
   coverEmoji  String?  @default("💬")
   genre       String?
-  published   Boolean  @default(false) // 공개 여부
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  characters TalkCharacter[]
-  messages   TalkMessage[]
-  likes      StoryLike[]
-  comments   StoryComment[]
-  reads      StoryRead[]
+  characters TalkCharacter[] // 인물은 작품 단위로 공유 (모든 화에서 재사용)
+  episodes   TalkEpisode[]
 
   @@index([authorId])
+}
+
+// 화 (회차) — 실제 대화·조회수·댓글이 달리는 단위
+model TalkEpisode {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  title     String // 예: "1화", "프롤로그"
+  number    Int      @default(1) // 회차 순서
+  published Boolean  @default(false) // 개시(공개) 여부
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages TalkMessage[]
+  likes    StoryLike[]
+  comments StoryComment[]
+  reads    StoryRead[]
+
+  @@index([storyId, number])
   @@index([published, updatedAt])
 }
 
-// 스토리에 등장하는 화자 (말풍선 주인)
+// 작품에 등장하는 화자 (말풍선 주인). 색이 아니라 프로필(이모지/사진)로 구분.
 model TalkCharacter {
   id      String  @id @default(cuid())
   storyId String
   story   TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
   name    String
-  emoji   String? @default("🙂")
-  color   String? @default("#7c54f5")
+  emoji   String? @default("🙂") // 기본 프로필 (사진이 없을 때)
+  avatar  String? // 업로드한 프로필 사진 (data URL). 있으면 emoji 대신 사용
   align   String  @default("left") // left | right (오른쪽 = '나'/주인공)
   order   Int     @default(0)
 
@@ -260,54 +275,54 @@ model TalkCharacter {
 // 대화 한 줄 (말풍선 또는 지문)
 model TalkMessage {
   id          String   @id @default(cuid())
-  storyId     String
-  story       TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  episodeId   String
+  episode     TalkEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   characterId String? // 지문/나레이션은 화자 없음
   character   TalkCharacter? @relation(fields: [characterId], references: [id], onDelete: SetNull)
   kind        String   @default("dialogue") // dialogue | thought | monologue | narration
   text        String
   order       Int      @default(0)
 
-  @@index([storyId])
+  @@index([episodeId])
 }
 
-// 좋아요 (이용자 × 스토리, 중복 방지)
+// 좋아요 (이용자 × 화, 중복 방지)
 model StoryLike {
   id        String   @id @default(cuid())
-  storyId   String
-  story     TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  episodeId String
+  episode   TalkEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@unique([storyId, userId])
-  @@index([storyId])
+  @@unique([episodeId, userId])
+  @@index([episodeId])
 }
 
 // 댓글
 model StoryComment {
   id        String   @id @default(cuid())
-  storyId   String
-  story     TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  episodeId String
+  episode   TalkEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   text      String
   createdAt DateTime @default(now())
 
-  @@index([storyId])
+  @@index([episodeId])
 }
 
 // 열람 기록 — 조회수를 '탭 합계'가 아니라 '연 사람 수 + 완독률'로 집계
 model StoryRead {
   id        String   @id @default(cuid())
-  storyId   String
-  story     TalkStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  episodeId String
+  episode   TalkEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   maxIndex  Int      @default(0) // 도달한 최대 위치
   completed Boolean  @default(false) // 끝까지 읽었는지
   updatedAt DateTime @updatedAt
 
-  @@unique([storyId, userId])
-  @@index([storyId])
+  @@unique([episodeId, userId])
+  @@index([episodeId])
 }
