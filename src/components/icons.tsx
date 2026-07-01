@@ -96,3 +96,24 @@ export const IconCrown = (p: P) => (
     <path d="M3 7l4 4 5-7 5 7 4-4-2 12H5z" />
   </svg>
 );
+export const IconRank = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 21V10M10 21V4M16 21v-7M22 21H2" />
+  </svg>
+);
+export const IconCopy = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+  </svg>
+);
+export const IconGrip = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="9" cy="6" r="1" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="18" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="6" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="18" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);

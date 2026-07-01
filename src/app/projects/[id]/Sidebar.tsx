@@ -7,6 +7,7 @@ import {
   IconBoard,
   IconBook,
   IconHook,
+  IconRank,
   IconShield,
   IconUsers,
   IconWiki,
@@ -29,6 +30,7 @@ export function Sidebar({
     { href: `${base}/characters`, label: "인물 · 관계도", icon: IconUsers },
     { href: `${base}/factions`, label: "세력 · 조직", icon: IconShield },
     { href: `${base}/foreshadowing`, label: "떡밥 추적기", icon: IconHook },
+    { href: `${base}/rankings`, label: "랭킹", icon: IconRank },
     { href: `${base}/board`, label: "스토리 구조", icon: IconBoard },
     { href: `${base}/wiki`, label: "세계관 위키", icon: IconWiki },
   ];

@@ -26,6 +26,7 @@ model Project {
   wikiPages        WikiPage[]
   factions         Faction[]
   factionRelations FactionRelation[]
+  rankingBoards    RankingBoard[]
 }
 
 // 등장인물
@@ -60,6 +61,7 @@ model Character {
   relationsFrom Relationship[] @relation("from")
   relationsTo   Relationship[] @relation("to")
   ledFactions   Faction[]      @relation("factionLeader")
+  rankingEntries RankingEntry[]
 
   @@index([projectId])
   @@index([factionId])
@@ -184,6 +186,46 @@ model Scene {
 
   @@index([projectId])
   @@index([actId])
+}
+
+// 랭킹표 (예: 월드 랭킹, 배틀필드 랭킹)
+model RankingBoard {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  note      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  snapshots RankingSnapshot[]
+
+  @@index([projectId])
+}
+
+// 시점 스냅샷 (예: 시즌1 초반, 시즌1 후반)
+model RankingSnapshot {
+  id      String        @id @default(cuid())
+  boardId String
+  board   RankingBoard  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  label   String
+  order   Int           @default(0) // 시간 순서
+  entries RankingEntry[]
+
+  @@index([boardId])
+}
+
+// 랭킹 항목 (한 시점의 한 줄)
+model RankingEntry {
+  id          String          @id @default(cuid())
+  snapshotId  String
+  snapshot    RankingSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  characterId String? // 인물 연결 (변동 추적/이모지)
+  character   Character?      @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  name        String? // 표시 이름 (인물 미연결 시)
+  note        String? // 소속/비고 등
+  position    Int             @default(0) // 0-based, 순위 = position + 1
+
+  @@index([snapshotId])
 }
 
 // 세계관 위키 문서
