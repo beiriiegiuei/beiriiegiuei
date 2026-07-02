@@ -355,54 +355,58 @@ export function Editor({
 
       {/* 작성 도구 (항상 하단 고정) */}
       <div className="border-t border-line bg-paper px-3 pb-3 pt-2">
-        {/* 인물 선택 줄 */}
-        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-1">
-          {chars.map((c) => {
-            const active = mode !== "narration" && activeId === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => {
-                  setActiveId(c.id);
-                  if (mode === "narration") setMode("dialogue");
-                }}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-xs font-medium transition ${
-                  active
-                    ? "bg-brand-600 text-white"
-                    : "bg-paper-sunk text-ink-soft hover:bg-line"
-                }`}
-                aria-pressed={active}
-              >
-                <Avatar emoji={c.emoji} avatar={c.avatar} name={c.name} size={22} />
-                {c.name}
-                {c.align === "right" && <span className="opacity-70">(나)</span>}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setMode("narration")}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-              mode === "narration"
-                ? "bg-ink text-white"
-                : "bg-paper-sunk text-ink-soft hover:bg-line"
-            }`}
-            aria-pressed={mode === "narration"}
-          >
-            지문
-          </button>
+        {/* 인물 선택 줄 (인물 추가/편집 버튼은 항상 보이도록 스크롤 밖에 고정) */}
+        <div className="mb-2 flex items-center gap-1.5">
+          <div className="flex flex-1 items-center gap-1.5 overflow-x-auto pb-1">
+            {chars.map((c) => {
+              const active = mode !== "narration" && activeId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setActiveId(c.id);
+                    if (mode === "narration") setMode("dialogue");
+                  }}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-xs font-medium transition ${
+                    active
+                      ? "bg-brand-600 text-white"
+                      : "bg-paper-sunk text-ink-soft hover:bg-line"
+                  }`}
+                  aria-pressed={active}
+                >
+                  <Avatar emoji={c.emoji} avatar={c.avatar} name={c.name} size={22} />
+                  {c.name}
+                  {c.align === "right" && <span className="opacity-70">(나)</span>}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setMode("narration")}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                mode === "narration"
+                  ? "bg-ink text-white"
+                  : "bg-paper-sunk text-ink-soft hover:bg-line"
+              }`}
+              aria-pressed={mode === "narration"}
+            >
+              지문
+            </button>
+          </div>
           <button
             onClick={openAddChar}
             className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-line-strong px-2.5 py-1.5 text-xs text-ink-muted hover:bg-paper-sunk"
+            aria-label="인물 추가"
           >
             <IconPlus width={13} height={13} /> 인물
           </button>
           {chars.length > 0 && (
             <button
               onClick={() => setManageOpen(true)}
-              className="shrink-0 rounded-full px-2 py-1.5 text-xs text-ink-faint hover:bg-paper-sunk"
-              aria-label="인물 관리"
+              className="flex shrink-0 items-center rounded-full p-1.5 text-ink-faint hover:bg-paper-sunk hover:text-brand-600"
+              aria-label="인물 편집·삭제"
+              title="인물 편집·삭제"
             >
-              관리
+              <IconEdit width={16} height={16} />
             </button>
           )}
         </div>

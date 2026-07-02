@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { login, signup, type AuthState } from "./actions";
+import { authenticate, type AuthState } from "./actions";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -21,8 +21,10 @@ export function AuthForm({
   next?: string;
 }) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
-  const action = mode === "login" ? login : signup;
-  const [state, formAction] = useActionState<AuthState, FormData>(action, null);
+  const [state, formAction] = useActionState<AuthState, FormData>(
+    authenticate,
+    null,
+  );
 
   return (
     <div>
@@ -49,6 +51,7 @@ export function AuthForm({
       </div>
 
       <form action={formAction} className="space-y-4">
+        <input type="hidden" name="mode" value={mode} />
         {next && <input type="hidden" name="next" value={next} />}
 
         <div>
