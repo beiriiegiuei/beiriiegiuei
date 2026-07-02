@@ -11,7 +11,7 @@ import {
   IconChevronRight,
   IconTrash,
 } from "@/components/icons";
-import { Bubble } from "../../../Bubble";
+import { Bubble, isGrouped } from "../../../Bubble";
 import {
   toggleLike,
   addComment,
@@ -39,6 +39,7 @@ export function Reader({
   likeCount,
   readCount,
   comments,
+  startIndex = 0,
 }: {
   storyId: string;
   episodeId: string;
@@ -54,9 +55,12 @@ export function Reader({
   likeCount: number;
   readCount: number;
   comments: Comment[];
+  startIndex?: number; // 이어보기: 지난번 도달 위치
 }) {
   const total = messages.length;
-  const [revealed, setRevealed] = useState(total > 0 ? 1 : 0);
+  const [revealed, setRevealed] = useState(
+    total > 0 ? Math.min(Math.max(1, startIndex + 1), total) : 0,
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wheelAt = useRef(0);
@@ -182,12 +186,13 @@ export function Reader({
         ) : (
           <>
             <ol className="space-y-3.5">
-              {shown.map((m) => (
-                <li key={m.id}>
+              {shown.map((m, i) => (
+                <li key={m.id} className={isGrouped(shown, i) ? "-mt-2" : ""}>
                   <Bubble
                     kind={m.kind}
                     text={m.text}
                     char={m.characterId ? charMap[m.characterId] : undefined}
+                    grouped={isGrouped(shown, i)}
                   />
                 </li>
               ))}

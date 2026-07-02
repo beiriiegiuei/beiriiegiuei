@@ -34,6 +34,10 @@ export default async function EpisodeReaderPage({
       },
       messages: { orderBy: { order: "asc" } },
       likes: { where: { userId: user.id }, select: { id: true } },
+      reads: {
+        where: { userId: user.id },
+        select: { maxIndex: true, completed: true },
+      },
       comments: {
         orderBy: { createdAt: "desc" },
         include: { user: { select: { displayName: true } } },
@@ -50,6 +54,10 @@ export default async function EpisodeReaderPage({
   const next = episode.story.episodes
     .filter((e) => e.number > episode.number && (isOwner || e.published))
     .sort((a, b) => a.number - b.number)[0];
+
+  // 이어보기: 완독 전이면 지난번 도달 위치에서 시작
+  const myRead = episode.reads[0];
+  const startIndex = myRead && !myRead.completed ? myRead.maxIndex : 0;
 
   const charMap = Object.fromEntries(
     episode.story.characters.map((c) => [
@@ -84,6 +92,7 @@ export default async function EpisodeReaderPage({
         author: c.user.displayName,
         mine: c.userId === user.id,
       }))}
+      startIndex={startIndex}
     />
   );
 }

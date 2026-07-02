@@ -11,9 +11,10 @@ import {
   IconSend,
   IconEdit,
   IconCheck,
+  IconSwap,
 } from "@/components/icons";
 import { Avatar } from "./Avatar";
-import { Bubble, type Kind } from "./Bubble";
+import { Bubble, isGrouped, type Kind } from "./Bubble";
 import {
   saveEpisode,
   createCharacter,
@@ -118,6 +119,17 @@ export function Editor({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstRender = useRef(true);
+  const [viewportH, setViewportH] = useState<number | null>(null);
+
+  // 모바일 키보드가 열리면 보이는 영역만큼만 높이를 잡아 입력창이 가려지지 않게 함
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setViewportH(vv.height);
+    onResize();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -172,10 +184,29 @@ export function Editor({
     inputRef.current?.focus();
   };
 
+  // 화자 원터치 전환: 인물 목록을 순환 (2명이면 사실상 상대와 토글)
+  const cycleSpeaker = () => {
+    if (chars.length === 0) return;
+    if (mode === "narration") {
+      setMode("dialogue");
+      setActiveId(chars[0].id);
+      return;
+    }
+    const i = chars.findIndex((c) => c.id === activeId);
+    const next = chars[(i + 1 + chars.length) % chars.length] ?? chars[0];
+    setActiveId(next.id);
+  };
+
   const onComposerKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
+    } else if (e.key === "Tab") {
+      // Tab 으로 화자 전환 (Shift+Tab은 기본 포커스 이동 유지)
+      if (!e.shiftKey && chars.length > 1) {
+        e.preventDefault();
+        cycleSpeaker();
+      }
     }
   };
 
@@ -298,7 +329,10 @@ export function Editor({
   };
 
   return (
-    <main className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
+    <main
+      className="mx-auto flex h-[100dvh] max-w-2xl flex-col"
+      style={viewportH ? { height: `${viewportH}px` } : undefined}
+    >
       {/* 상단 바 */}
       <header className="flex items-center gap-2 border-b border-line bg-paper px-3 py-2.5">
         <Link
@@ -374,13 +408,18 @@ export function Editor({
         ) : (
           <ol className="space-y-3">
             {msgs.map((m, i) => (
-              <li key={m.key}>
+              <li key={m.key} className={isGrouped(msgs, i) ? "-mt-2" : ""}>
                 <button
                   onClick={() => setEditing(i)}
                   className="block w-full rounded-xl px-1 py-0.5 text-left transition hover:bg-paper-sunk"
                   aria-label={`${i + 1}번째 줄 수정`}
                 >
-                  <Bubble kind={m.kind} text={m.text} char={charById(m.characterId)} />
+                  <Bubble
+                    kind={m.kind}
+                    text={m.text}
+                    char={charById(m.characterId)}
+                    grouped={isGrouped(msgs, i)}
+                  />
                 </button>
               </li>
             ))}
@@ -434,6 +473,16 @@ export function Editor({
               지문
             </button>
           </div>
+          {chars.length > 1 && (
+            <button
+              onClick={cycleSpeaker}
+              className="flex shrink-0 items-center rounded-full p-1.5 text-ink-soft hover:bg-paper-sunk hover:text-brand-600"
+              aria-label="다음 화자로 전환 (Tab)"
+              title="화자 전환 (Tab)"
+            >
+              <IconSwap width={16} height={16} />
+            </button>
+          )}
           <button
             onClick={openAddChar}
             className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-line-strong px-2.5 py-1.5 text-xs text-ink-muted hover:bg-paper-sunk"
@@ -480,6 +529,12 @@ export function Editor({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onComposerKey}
+            onFocus={() =>
+              setTimeout(
+                () => bottomRef.current?.scrollIntoView({ block: "end" }),
+                250,
+              )
+            }
             rows={1}
             className="input max-h-32 min-h-[42px] flex-1 resize-none py-2.5"
             placeholder={
@@ -743,9 +798,14 @@ export function Editor({
             </p>
           ) : (
             <ol className="space-y-3">
-              {msgs.map((m) => (
-                <li key={m.key}>
-                  <Bubble kind={m.kind} text={m.text} char={charById(m.characterId)} />
+              {msgs.map((m, i) => (
+                <li key={m.key} className={isGrouped(msgs, i) ? "-mt-2" : ""}>
+                  <Bubble
+                    kind={m.kind}
+                    text={m.text}
+                    char={charById(m.characterId)}
+                    grouped={isGrouped(msgs, i)}
+                  />
                 </li>
               ))}
             </ol>

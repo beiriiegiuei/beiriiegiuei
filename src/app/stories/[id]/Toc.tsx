@@ -24,6 +24,8 @@ type Ep = {
   reads: number;
   likes: number;
   comments: number;
+  myStatus: "done" | "reading" | "none";
+  myPercent: number;
 };
 
 const COVER_EMOJIS = ["💬", "📖", "💌", "🌙", "⚔️", "🩷", "🕯️", "🌧️", "🎭", "🔮", "🥀", "☕"];
@@ -124,11 +126,19 @@ export function Toc({
                     href={`/stories/${storyId}/episodes/${e.id}`}
                     className="min-w-0 flex-1"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-ink">{e.title}</span>
                       {!e.published && (
                         <span className="chip bg-paper-sunk text-ink-muted">
                           비공개
+                        </span>
+                      )}
+                      {e.myStatus === "done" && (
+                        <span className="chip bg-brand-50 text-brand-700">✓ 완독</span>
+                      )}
+                      {e.myStatus === "reading" && (
+                        <span className="chip bg-amber-50 text-amber-700">
+                          이어보기 {e.myPercent}%
                         </span>
                       )}
                     </div>
