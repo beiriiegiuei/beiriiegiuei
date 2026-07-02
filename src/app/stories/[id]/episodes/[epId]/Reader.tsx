@@ -65,8 +65,19 @@ export function Reader({
   const bottomRef = useRef<HTMLDivElement>(null);
   const wheelAt = useRef(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [viewportH, setViewportH] = useState<number | null>(null);
 
   const done = total === 0 || revealed >= total;
+
+  // 모바일: 보이는 영역만큼만 높이를 잡아 하단 버튼/댓글창이 키보드에 안 가리게
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setViewportH(vv.height);
+    onResize();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
 
   const advance = useCallback(() => {
     setRevealed((r) => (r < total ? r + 1 : r));
@@ -92,6 +103,7 @@ export function Reader({
   }, [advance, back]);
 
   useEffect(() => {
+    // 마지막 대사가 보이도록 안쪽 스크롤을 내림 (하단 버튼에 가리지 않게)
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     if (total === 0) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -126,8 +138,11 @@ export function Reader({
   const last = shown[shown.length - 1];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col">
-      <header className="sticky top-0 z-10 border-b border-line bg-paper/85 backdrop-blur">
+    <main
+      className="mx-auto flex h-[100dvh] max-w-2xl flex-col"
+      style={viewportH ? { height: `${viewportH}px` } : undefined}
+    >
+      <header className="z-10 border-b border-line bg-paper/85 backdrop-blur">
         <div className="flex items-center gap-3 px-4 py-3">
           <Link
             href={`/stories/${storyId}`}
@@ -178,7 +193,12 @@ export function Reader({
         </p>
       )}
 
-      <div ref={scrollRef} onWheel={onWheel} onClick={onTapArea} className="flex-1 px-4 py-6">
+      <div
+        ref={scrollRef}
+        onWheel={onWheel}
+        onClick={onTapArea}
+        className="flex-1 overflow-y-auto px-4 py-6"
+      >
         {total === 0 ? (
           <p className="mt-20 text-center text-sm text-ink-faint">
             아직 대화가 없는 화예요.
@@ -203,12 +223,23 @@ export function Reader({
                 : ""}
             </div>
             <div ref={bottomRef} />
+            {done && (
+              <EndPanel
+                storyId={storyId}
+                episodeId={episodeId}
+                nextEpisodeId={nextEpisodeId}
+                liked={liked}
+                likeCount={likeCount}
+                readCount={readCount}
+                comments={comments}
+              />
+            )}
           </>
         )}
       </div>
 
-      {!done ? (
-        <div className="sticky bottom-0 border-t border-line bg-paper/85 px-4 py-3 backdrop-blur">
+      {!done && (
+        <div className="border-t border-line bg-paper px-4 py-3">
           <div className="flex items-center gap-2">
             <button onClick={back} disabled={revealed <= 1} className="btn-outline" aria-label="이전 대화">
               <IconArrowLeft width={16} height={16} />
@@ -221,18 +252,6 @@ export function Reader({
             화면을 탭하거나 스페이스·방향키로도 넘길 수 있어요
           </p>
         </div>
-      ) : (
-        total > 0 && (
-          <EndPanel
-            storyId={storyId}
-            episodeId={episodeId}
-            nextEpisodeId={nextEpisodeId}
-            liked={liked}
-            likeCount={likeCount}
-            readCount={readCount}
-            comments={comments}
-          />
-        )
       )}
     </main>
   );
