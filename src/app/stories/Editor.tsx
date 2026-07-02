@@ -111,15 +111,45 @@ export function Editor({
   const [preview, setPreview] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(true); // 변경 없음(=저장됨) 상태로 시작
   const [pending, startTransition] = useTransition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstRender = useRef(true);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [msgs.length]);
+
+  // 자동 저장: 대화/제목이 바뀌면 잠시 후 조용히 저장(글 유실 방지)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setSaved(false);
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    autoTimer.current = setTimeout(() => doSave(undefined, true), 2000);
+    return () => {
+      if (autoTimer.current) clearTimeout(autoTimer.current);
+    };
+    // doSave는 최신 상태를 클로저로 읽으므로 의존성에서 제외
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msgs, title]);
+
+  // 저장 안 된 변경이 있으면 이탈 전 경고
+  useEffect(() => {
+    const h = (e: BeforeUnloadEvent) => {
+      if (!saved) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [saved]);
 
   const charById = (id: string | null) =>
     id ? chars.find((c) => c.id === id) : undefined;
@@ -226,8 +256,10 @@ export function Editor({
   };
 
   // ── 저장/개시 ──
-  const doSave = (publish: boolean | undefined) => {
-    setError(null);
+  // auto=true 이면 자동 저장(에러/이동 없이 조용히)
+  const doSave = (publish: boolean | undefined, auto = false) => {
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    if (!auto) setError(null);
     startTransition(async () => {
       const res = await saveEpisode({
         episodeId,
@@ -240,7 +272,7 @@ export function Editor({
         publish,
       });
       if ("error" in res) {
-        setError(res.error);
+        if (!auto) setError(res.error);
         return;
       }
       if (publish === true) {
@@ -250,11 +282,12 @@ export function Editor({
       }
       if (publish === false) setPub(false);
       setSaved(true);
-      setPreview(false);
+      if (!auto) setPreview(false);
     });
   };
 
-  const openAddChar = () =>
+  const openAddChar = () => {
+    setManageOpen(false);
     setCharForm({
       mode: "add",
       name: "",
@@ -262,6 +295,7 @@ export function Editor({
       avatar: null,
       align: chars.length === 0 ? "right" : "left",
     });
+  };
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
@@ -299,8 +333,9 @@ export function Editor({
           onClick={() => doSave(undefined)}
           disabled={pending}
           className="btn-ghost px-2.5 py-1.5 text-xs"
+          title="수동 저장 (자동 저장도 됩니다)"
         >
-          {saved ? "저장됨" : "임시저장"}
+          {pending ? "저장 중…" : saved ? "저장됨 ✓" : "임시저장"}
         </button>
         {pub ? (
           <button
@@ -324,10 +359,17 @@ export function Editor({
       {/* 채팅 영역 */}
       <div className="flex-1 overflow-y-auto bg-paper-soft px-4 py-5">
         {msgs.length === 0 ? (
-          <div className="mt-16 text-center text-sm text-ink-faint">
-            아래 입력창에서 대사를 입력하면
-            <br />
-            메신저처럼 말풍선이 쌓여요. 인물을 먼저 추가해보세요.
+          <div className="mt-16 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-ink-faint">
+              아래 입력창에서 대사를 입력하면
+              <br />
+              메신저처럼 말풍선이 쌓여요.
+            </p>
+            {chars.length === 0 && (
+              <button onClick={openAddChar} className="btn-primary">
+                <IconPlus width={16} height={16} /> 먼저 인물 추가하기
+              </button>
+            )}
           </div>
         ) : (
           <ol className="space-y-3">
@@ -555,7 +597,8 @@ export function Editor({
                 </p>
               </div>
               <button
-                onClick={() =>
+                onClick={() => {
+                  setManageOpen(false);
                   setCharForm({
                     mode: "edit",
                     id: c.id,
@@ -563,8 +606,8 @@ export function Editor({
                     emoji: c.emoji,
                     avatar: c.avatar,
                     align: c.align,
-                  })
-                }
+                  });
+                }}
                 className="rounded-lg p-2 text-ink-faint hover:bg-brand-50 hover:text-brand-600"
                 aria-label={`${c.name} 수정`}
               >
